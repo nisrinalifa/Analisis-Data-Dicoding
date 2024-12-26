@@ -6,7 +6,7 @@ from babel.numbers import format_currency
 sns.set(style='dark')
 
 # Mengimpor dataset (contoh, sesuaikan dengan data Anda)
-all_df = pd.read_csv('./all_data.csv')
+all_df = pd.read_csv('dashboard/all_data.csv')
 
 # Membuat helper function
 def create_daily_orders_df(df):
