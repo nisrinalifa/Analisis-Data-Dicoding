@@ -45,7 +45,7 @@ def create_avg_hour_df(df):
 
 
 datetime_columns = [day_df.dteday, hour_df.dteday]
-all_df.sort_values(by = 'dteday', inplace = True)
+all_df.sort_values(by = 'dteday_x', inplace = True)
 all_df.reset_index(inplace = True)
 
 for column in datetime_columns:
