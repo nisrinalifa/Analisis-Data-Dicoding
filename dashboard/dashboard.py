@@ -52,8 +52,8 @@ for column in datetime_columns:
     all_df[column] = pd.to_datetime(all_df[column])
 
 # ================ Filter ==================
-min_date = all_df['dteday'].min()
-max_date = all_df['dteday'].max()
+min_date = min(day_df['dteday'].min(), hour_df['dteday'].min())
+max_date = max(day_df['dteday'].max(), hour_df['dteday'].max())
 
 with st.sidebar:
     # Mengambil start_date & end_date dari date_input
