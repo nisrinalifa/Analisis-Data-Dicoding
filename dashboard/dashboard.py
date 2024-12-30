@@ -6,52 +6,54 @@ from babel.numbers import format_currency
 sns.set(style='dark')
 
 # Mengimpor dataset (contoh, sesuaikan dengan data Anda)
+day_df = pd.read_csv('dashboard/day.csv')
+hour_df = pd.read_csv('dashboard/hour.csv')
 all_df = pd.read_csv('dashboard/all_data.csv')
 
 # Membuat helper function
 def create_daily_orders_df(df):
-    daily_orders_df = df.resample(rule ='D', on = 'dteday_y').agg({
-        'dteday_x' : 'nunique',
-        'cnt_y' : 'sum'
+    daily_orders_df = df.resample(rule ='D', on = 'dteday').agg({
+        'dteday' : 'nunique',
+        'cnt' : 'sum'
     })
 
     daily_orders_df = daily_orders_df.reset_index()
     daily_orders_df.rename(columns= {
-        'dteday_x' : 'order_count',
-        'cnt_y' : 'qty'
+        'dteday' : 'order_count',
+        'cnt' : 'qty'
     }, inplace = True)
 
     return daily_orders_df
 
 def create_avg_season_weather_df(df):
-    # Mengelompokkan berdasarkan 'season_x' dan 'weathersit_x' dan menghitung rata-rata dari 'cnt_x'
-    avg_season_weather_df = df.groupby(['season_x', 'weathersit_x'])['cnt_x'].mean().reset_index()
+    # Mengelompokkan berdasarkan 'season' dan 'weathersit' dan menghitung rata-rata dari 'cnt'
+    avg_season_weather_df = df.groupby(['season', 'weathersit'])['cnt'].mean().reset_index()
     
-    # Mengurutkan hasil berdasarkan 'cnt_x' secara menurun
-    avg_season_weather_df = avg_season_weather_df.sort_values(by='cnt_x', ascending=False)
+    # Mengurutkan hasil berdasarkan 'cnt' secara menurun
+    avg_season_weather_df = avg_season_weather_df.sort_values(by='cnt', ascending=False)
     
     return avg_season_weather_df
 
 
 def create_avg_day_df(df):
-    avg_day_df = df.groupby('weekday_x')['cnt_x'].mean().sort_values(ascending = False).reset_index()
+    avg_day_df = df.groupby('weekday')['cnt'].mean().sort_values(ascending = False).reset_index()
     return avg_day_df
 
 def create_avg_hour_df(df):
-    avg_hour_df = df.groupby('hr')['cnt_y'].mean().sort_values(ascending = False).reset_index()
+    avg_hour_df = df.groupby('hr')['cnt'].mean().sort_values(ascending = False).reset_index()
     return avg_hour_df
 
 
-datetime_columns = ['dteday_x', 'dteday_y']
-all_df.sort_values(by = 'dteday_x', inplace = True)
+datetime_columns = [day_df.dteday, hour_df.dteday]
+all_df.sort_values(by = 'dteday', inplace = True)
 all_df.reset_index(inplace = True)
 
 for column in datetime_columns:
     all_df[column] = pd.to_datetime(all_df[column])
 
 # ================ Filter ==================
-min_date = all_df['dteday_x'].min()
-max_date = all_df['dteday_x'].max()
+min_date = all_df['dteday'].min()
+max_date = all_df['dteday'].max()
 
 with st.sidebar:
     # Mengambil start_date & end_date dari date_input
@@ -62,13 +64,16 @@ with st.sidebar:
         value = [min_date, max_date]
     )
 
-main_df = all_df[(all_df['dteday_x'] >= str(start_date)) &
-                (all_df['dteday_x'] <= str(end_date))]
+mainday_df = day_df[(day_df['dteday'] >= str(start_date)) &
+                (day_df['dteday'] <= str(end_date))]
 
-daily_orders_df = create_daily_orders_df(main_df)
-avg_season_weather_df = create_avg_season_weather_df(main_df)
-avg_day_df = create_avg_day_df(main_df)
-avg_hour_df = create_avg_hour_df(main_df)
+mainhour_df = hour_df[(hour_df['dteday'] >= str(start_date)) &
+                (hour_df['dteday'] <= str(end_date))]
+
+daily_orders_df = create_daily_orders_df(mainday_df)
+avg_season_weather_df = create_avg_season_weather_df(mainday_df)
+avg_day_df = create_avg_day_df(mainday_df)
+avg_hour_df = create_avg_hour_df(mainhour_df)
 
 # ================ Streamlit Sidebar =================
 st.sidebar.header("Nisrina Alifa Adzahra")
@@ -99,21 +104,21 @@ st.subheader("Penyewaan Sepeda Terbanyak Berdasarkan Musim dan Cuaca")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    max_season = int(avg_season_weather_df.loc[avg_season_weather_df['cnt_x'].idxmax(), 'season_x'])
+    max_season = int(avg_season_weather_df.loc[avg_season_weather_df['cnt'].idxmax(), 'season'])
     st.metric('Musim', value=max_season)
 
 with col2:
-    max_weather = int(avg_season_weather_df.loc[avg_season_weather_df['cnt_x'].idxmax(), 'weathersit_x'])
+    max_weather = int(avg_season_weather_df.loc[avg_season_weather_df['cnt'].idxmax(), 'weathersit'])
     st.metric('Cuaca', value=max_weather)
 
 with col3:
-    max_count = int(avg_season_weather_df.loc[avg_season_weather_df['cnt_x'].idxmax(), 'cnt_x'])
+    max_count = int(avg_season_weather_df.loc[avg_season_weather_df['cnt'].idxmax(), 'cnt'])
     st.metric('Jumlah Rata-Rata', value=f'{max_count:.2f}')
 
 fig, ax = plt.subplots(figsize = (16, 8))
 ax.plot(
-    avg_season_weather_df['season_x'],
-    avg_season_weather_df['weathersit_x'],
+    avg_season_weather_df['season'],
+    avg_season_weather_df['weathersit'],
     marker = 'o',
     linewidth = 2,
     color = '#90CAF9'
@@ -123,11 +128,11 @@ ax.tick_params(axis = 'y', labelsize = 20)
 ax.tick_params(axis = 'x', labelsize = 15)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.barplot(x='season_x', y='cnt_x', data=avg_season_weather_df, hue='weathersit_x', ax=ax)
+sns.barplot(x='season', y='cnt', data=avg_season_weather_df, hue='weathersit', ax=ax)
 ax.set_title('Penyewaan Sepeda Berdasarkan Musim dan Cuaca', fontsize=15)
 ax.legend(title='Kondisi Cuaca')
-ax.set_xlabel('Musim', fontsize=15)
-ax.set_ylabel('Jumlah Penyewaan', fontsize=15)
+ax.setlabel('Musim', fontsize=15)
+ax.setlabel('Jumlah Penyewaan', fontsize=15)
 ax.grid(True, axis='y', linestyle='--', alpha=0.3, color = '#000000')
 
 st.pyplot(fig)
@@ -166,11 +171,11 @@ st.subheader("Tren Penyewaan Sepeda dalam Satu Minggu")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    max_day = int(avg_day_df.loc[avg_day_df['cnt_x'].idxmax(), 'weekday_x'])
+    max_day = int(avg_day_df.loc[avg_day_df['cnt'].idxmax(), 'weekday'])
     st.metric('Hari', value=max_day)
 
 with col2:
-    max_count = int(avg_day_df.loc[avg_day_df['cnt_x'].idxmax(), 'cnt_x'])
+    max_count = int(avg_day_df.loc[avg_day_df['cnt'].idxmax(), 'cnt'])
     st.metric('Jumlah Rata-Rata', value=f'{max_count:.2f}')
 
 with col3:
@@ -189,8 +194,8 @@ with col3:
 
 fig, ax = plt.subplots(figsize = (16, 8))
 ax.plot(
-    avg_season_weather_df['season_x'],
-    avg_season_weather_df['weathersit_x'],
+    avg_season_weather_df['season'],
+    avg_season_weather_df['weathersit'],
     marker = 'o',
     linewidth = 2,
     color = '#90CAF9'
@@ -200,10 +205,10 @@ ax.tick_params(axis = 'y', labelsize = 20)
 ax.tick_params(axis = 'x', labelsize = 15)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.lineplot(x=avg_day_df['weekday_x'], y=avg_day_df['cnt_x'], marker='o', ax=ax)
+sns.lineplot(x=avg_day_df['weekday'], y=avg_day_df['cnt'], marker='o', ax=ax)
 ax.set_title('Tren Penyewaan Sepeda dalam satu Minggu', fontsize=15)
-ax.set_xlabel('Hari', fontsize=12)
-ax.set_ylabel('Jumlah Penyewaan', fontsize=12)
+ax.setlabel('Hari', fontsize=12)
+ax.setlabel('Jumlah Penyewaan', fontsize=12)
 st.pyplot(fig)
 
 st.divider()
@@ -216,20 +221,20 @@ st.subheader("Tren Jam Penyewaan Sepeda")
 col1, col2 = st.columns(2)
 
 with col1:
-    max_hour = int(avg_hour_df.loc[avg_hour_df['cnt_y'].idxmax(), 'hr'])
+    max_hour = int(avg_hour_df.loc[avg_hour_df['cnt'].idxmax(), 'hr'])
     st.metric('Jam', value=max_hour)
 
 with col2:
-    max_count = int(avg_hour_df.loc[avg_hour_df['cnt_y'].idxmax(), 'cnt_y'])
+    max_count = int(avg_hour_df.loc[avg_hour_df['cnt'].idxmax(), 'cnt'])
     st.metric('Jumlah Rata-Rata', value=f'{max_count:.2f}')
 
 
 fig, ax = plt.subplots(figsize=(10, 5))
-sns.lineplot(x=all_df['hr'], y=all_df['cnt_y'], marker='o', ax=ax)
+sns.lineplot(x=all_df['hr'], y=all_df['cnt'], marker='o', ax=ax)
 ax.set_title('Tren Jam Penyewaan Sepeda', fontsize=15)
-ax.set_xlabel('Jam', fontsize=12)
-ax.set_ylabel('Jumlah Penyewaan', fontsize=12)
-ax.set_xticks(range(0, 24))
+ax.setlabel('Jam', fontsize=12)
+ax.setlabel('Jumlah Penyewaan', fontsize=12)
+ax.setticks(range(0, 24))
 ax.grid(True, axis='x', linestyle='--', alpha=0.3, color = '#000000')
 ax.grid(True, axis='y', linestyle='--', alpha=0.3, color = '#000000')
 
