@@ -6,9 +6,9 @@ from babel.numbers import format_currency
 sns.set(style='dark')
 
 # Mengimpor dataset (contoh, sesuaikan dengan data Anda)
-day_df = pd.read_csv('dashboard/day.csv')
-hour_df = pd.read_csv('dashboard/hour.csv')
-all_df = pd.read_csv('dashboard/all_data.csv')
+day_df = pd.read_csv('day_data.csv')
+hour_df = pd.read_csv('hour_data.csv')
+all_df = pd.read_csv('all_data.csv')
 
 # Membuat helper function
 def create_daily_orders_df(df):
@@ -48,8 +48,8 @@ datetime_columns = [day_df.dteday, hour_df.dteday]
 all_df.sort_values(by = 'dteday', inplace = True)
 all_df.reset_index(inplace = True)
 
-for column in datetime_columns:
-    all_df[column] = pd.to_datetime(all_df[column])
+# for column in datetime_columns:
+    # all_df[column] = pd.to_datetime(all_df[column])
 
 # ================ Filter ==================
 min_date = min(day_df['dteday'].min(), hour_df['dteday'].min())
