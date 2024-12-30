@@ -64,11 +64,16 @@ with st.sidebar:
         value = [min_date, max_date]
     )
 
-mainday_df = day_df[(day_df['dteday'] >= str(start_date)) &
-                (day_df['dteday'] <= str(end_date))]
+# Validasi rentang waktu
+if start_date >= end_date:
+    st.error('Tanggal mulai tidak boleh lebih besar dari tanggal selesai')
 
-mainhour_df = hour_df[(hour_df['dteday'] >= str(start_date)) &
-                (hour_df['dteday'] <= str(end_date))]
+# Filter tanggal
+def filter_by_date(df, start_date, end_date, date_column='dteday'):
+    return df(df[date_column] >= str(start_date) & df[date_column] <= str(end_date))
+
+mainday_df = filter_by_date(day_df, start_date, end_date)
+mainhour_df = filter_by_date(hour_df, start_date, end_date)
 
 daily_orders_df = create_daily_orders_df(mainday_df)
 avg_season_weather_df = create_avg_season_weather_df(mainday_df)
